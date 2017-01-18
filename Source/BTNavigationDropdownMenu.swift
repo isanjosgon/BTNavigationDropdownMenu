@@ -307,7 +307,11 @@ open class BTNavigationDropdownMenu: UIView {
             }
             selfie.didSelectItemAtIndexHandler!(indexPath)
             if selfie.shouldChangeTitleText! {
-                selfie.setMenuTitle("\(selfie.tableView.items[indexPath])")
+                if let btitem = selfie.tableView.items[indexPath] as? BTItem {
+                    selfie.setMenuTitle("\(btitem.title)")
+                } else {
+                    selfie.setMenuTitle("\(selfie.tableView.items[indexPath])")
+                }
             }
             self?.hideMenu()
             self?.layoutSubviews()
@@ -545,7 +549,11 @@ class BTTableView: UITableView, UITableViewDelegate, UITableViewDataSource {
         super.init(frame: frame, style: UITableViewStyle.plain)
         
         self.items = items
-        self.selectedIndexPath = (items as! [String]).index(of: title)
+        if items[0] is BTItem {
+            self.selectedIndexPath = items.index() { let btitem = $0 as! BTItem; return btitem.title == title }
+        } else {
+            self.selectedIndexPath = (items as! [String]).index(of: title)
+        }
         self.configuration = configuration
         
         // Setup table view
@@ -579,6 +587,16 @@ class BTTableView: UITableView, UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if let btitem = self.items[indexPath.row] as? BTItem {
+            let cell = BTTableViewCell(style: UITableViewCellStyle.default, reuseIdentifier: "Cell", configuration: self.configuration, item: btitem)
+            
+            cell.imageView?.image = btitem.image
+            cell.textLabel?.text = btitem.title
+            cell.checkmarkIcon.isHidden = ((indexPath as NSIndexPath).row == selectedIndexPath) ? false : true
+            
+            return cell
+        }
+        
         let cell = BTTableViewCell(style: UITableViewCellStyle.default, reuseIdentifier: "Cell", configuration: self.configuration)
         cell.textLabel?.text = self.items[(indexPath as NSIndexPath).row] as? String
         cell.checkmarkIcon.isHidden = ((indexPath as NSIndexPath).row == selectedIndexPath) ? false : true
@@ -614,6 +632,7 @@ class BTTableView: UITableView, UITableViewDelegate, UITableViewDataSource {
 class BTTableViewCell: UITableViewCell {
     let checkmarkIconWidth: CGFloat = 50
     let horizontalMargin: CGFloat = 20
+    let imageMargin: CGFloat = 10
     
     var checkmarkIcon: UIImageView!
     var cellContentFrame: CGRect!
@@ -660,6 +679,58 @@ class BTTableViewCell: UITableViewCell {
         self.contentView.addSubview(separator)
     }
     
+    init(style: UITableViewCellStyle, reuseIdentifier: String?, configuration: BTConfiguration, item: BTItem) {
+        
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        
+        self.configuration = configuration
+        
+        // Setup cell
+        cellContentFrame = CGRect(x: 0, y: 0, width: (UIApplication.shared.keyWindow?.frame.width)!, height: self.configuration.cellHeight)
+        self.contentView.backgroundColor = self.configuration.cellBackgroundColor
+        self.selectionStyle = UITableViewCellSelectionStyle.none
+        
+        // ImageCell
+        self.imageView?.frame = CGRect(x: horizontalMargin, y: (cellContentFrame.height - 30)/2, width: 30, height: 30)
+        self.imageView?.contentMode = .scaleAspectFit
+        
+        // TextCell
+        self.textLabel!.textColor = self.configuration.cellTextLabelColor
+        self.textLabel!.font = self.configuration.cellTextLabelFont
+        self.textLabel!.textAlignment = self.configuration.cellTextLabelAlignment
+        if self.textLabel!.textAlignment == .center {
+            self.textLabel!.frame = CGRect(x: 0, y: 0, width: cellContentFrame.width, height: cellContentFrame.height)
+        } else if self.textLabel!.textAlignment == .left {
+            var x = horizontalMargin
+            if let _ = item.image, let width = imageView?.frame.size.width {
+                x = x + width + imageMargin
+            }
+            self.textLabel!.frame = CGRect(x: x, y: 0, width: cellContentFrame.width, height: cellContentFrame.height)
+        } else {
+            self.textLabel!.frame = CGRect(x: -horizontalMargin, y: 0, width: cellContentFrame.width, height: cellContentFrame.height)
+        }
+        
+        // Checkmark icon
+        if self.textLabel!.textAlignment == .center {
+            self.checkmarkIcon = UIImageView(frame: CGRect(x: cellContentFrame.width - checkmarkIconWidth, y: (cellContentFrame.height - 30)/2, width: 30, height: 30))
+        } else if self.textLabel!.textAlignment == .left {
+            self.checkmarkIcon = UIImageView(frame: CGRect(x: cellContentFrame.width - checkmarkIconWidth, y: (cellContentFrame.height - 30)/2, width: 30, height: 30))
+        } else {
+            self.checkmarkIcon = UIImageView(frame: CGRect(x: horizontalMargin, y: (cellContentFrame.height - 30)/2, width: 30, height: 30))
+        }
+        self.checkmarkIcon.isHidden = true
+        self.checkmarkIcon.image = self.configuration.checkMarkImage
+        self.checkmarkIcon.contentMode = UIViewContentMode.scaleAspectFill
+        self.contentView.addSubview(self.checkmarkIcon)
+        
+        // Separator for cell
+        let separator = BTTableCellContentView(frame: cellContentFrame)
+        if let cellSeparatorColor = self.configuration.cellSeparatorColor {
+            separator.separatorColor = cellSeparatorColor
+        }
+        self.contentView.addSubview(separator)
+    }
+    
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -667,6 +738,16 @@ class BTTableViewCell: UITableViewCell {
     override func layoutSubviews() {
         self.bounds = cellContentFrame
         self.contentView.frame = self.bounds
+    }
+}
+
+public struct BTItem {
+    public let image: UIImage?
+    public let title: String
+    
+    public init(image: UIImage?, title: String) {
+        self.image = image
+        self.title = title
     }
 }
 
