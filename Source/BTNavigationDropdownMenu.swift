@@ -692,7 +692,7 @@ class BTTableViewCell: UITableViewCell {
         
         // ImageCell
         self.imageView?.frame = CGRect(x: horizontalMargin, y: (cellContentFrame.height - 30)/2, width: 30, height: 30)
-        self.imageView?.contentMode = .scaleAspectFit
+        self.imageView?.contentMode = .center
         
         // TextCell
         self.textLabel!.textColor = self.configuration.cellTextLabelColor
