@@ -15,8 +15,17 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let items = ["Most Popular", "Latest", "Trending", "Nearest", "Top Picks"]
-        self.selectedCellLabel.text = items.first
+        
+        let image = UIImage(named: "CellIcon")
+        let items = [
+            BTItem(image: nil, title: "Most Popular"),
+            BTItem(image: image, title: "Latest"),
+            BTItem(image: nil, title: "Trending"),
+            BTItem(image: image, title: "Nearest"),
+            BTItem(image: image, title: "Top Picks")
+        ]
+        
+        self.selectedCellLabel.text = items.first?.title;
         self.navigationController?.navigationBar.isTranslucent = false
         self.navigationController?.navigationBar.barTintColor = UIColor(red: 0.0/255.0, green:180/255.0, blue:220/255.0, alpha: 1.0)
         self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName: UIColor.white]
@@ -35,7 +44,7 @@ class ViewController: UIViewController {
         menuView.maskBackgroundOpacity = 0.3
         menuView.didSelectItemAtIndexHandler = {(indexPath: Int) -> () in
             print("Did select item at index: \(indexPath)")
-            self.selectedCellLabel.text = items[indexPath]
+            self.selectedCellLabel.text = items[indexPath].title
         }
         
         self.navigationItem.titleView = menuView
